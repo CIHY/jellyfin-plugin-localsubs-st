@@ -1,3 +1,5 @@
+#pragma warning disable CA1873
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -21,15 +23,18 @@ namespace Jellyfin.Plugin.LocalSubs;
 public class LocalSubsProvider : ISubtitleProvider
 {
     private readonly ILogger<LocalSubsProvider> _logger;
+    private readonly LocalSubsPlugin _pluginInstance;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalSubsProvider"/> class.
     /// </summary>
     /// <param name="logger">Instance of the <see cref="ILogger{LocalSubsProvider}"/> interface.</param>
     /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/> for creating Http Clients.</param>
-    public LocalSubsProvider(ILogger<LocalSubsProvider> logger, IHttpClientFactory httpClientFactory)
+    /// <param name="pluginInstance">Instance of the <see cref="LocalSubsPlugin"/> class.</param>
+    public LocalSubsProvider(ILogger<LocalSubsProvider> logger, IHttpClientFactory httpClientFactory, LocalSubsPlugin pluginInstance)
     {
         _logger = logger;
+        _pluginInstance = pluginInstance;
     }
 
     /// <inheritdoc/>
@@ -96,6 +101,7 @@ public class LocalSubsProvider : ISubtitleProvider
     private IEnumerable<string> MatchFile(string mediaDir, string template, IDictionary<string, string> placeholders)
     {
         string[] parts = template.Split(Path.DirectorySeparatorChar);
+        _logger.LogDebug("MatchFile using parts: {Parts} separator: {DirectorySeparatorChar}", parts, Path.DirectorySeparatorChar);
         if (parts.Length < 1)
         {
             return Enumerable.Empty<string>();
@@ -109,6 +115,7 @@ public class LocalSubsProvider : ISubtitleProvider
             List<string> subDirs = [];
             foreach (string dir in dirs)
             {
+                _logger.LogDebug("Finding directories in {Directory} using pattern {DirectoryPattern}", dir, dirPattern);
                 if (Directory.Exists(dir))
                 {
                     subDirs.AddRange(Directory.EnumerateDirectories(dir).Where(d => dirRegex.IsMatch(Path.GetFileName(d) ?? string.Empty)));
@@ -123,6 +130,7 @@ public class LocalSubsProvider : ISubtitleProvider
         Regex fileRegex = new Regex(filePattern, RegexOptions.IgnoreCase);
         foreach (string dir in dirs)
         {
+            _logger.LogDebug("Finding files in {Directory} using pattern {FilePattern}", dir, filePattern);
             if (Directory.Exists(dir))
             {
                 files.AddRange(Directory.EnumerateFiles(dir).Where(f => fileRegex.IsMatch(Path.GetFileName(f))));
@@ -135,13 +143,19 @@ public class LocalSubsProvider : ISubtitleProvider
     /// <inheritdoc/>
     public Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
     {
-        string[] templates = LocalSubsPlugin.Instance!.Configuration.Templates;
-        if (string.IsNullOrEmpty(request.MediaPath) || templates == null || templates.Length < 1)
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogDebug("Search MediaPath: {MediaPath} | Language: {Language} | TwoLetterISOLanguageName: {TwoLetterISOLanguageName}", request.MediaPath, request.Language, request.TwoLetterISOLanguageName);
+
+        var templates = _pluginInstance.Configuration.Templates;
+        if (string.IsNullOrEmpty(request.MediaPath) || templates == null || !templates.Any())
         {
             return Task.FromResult(Enumerable.Empty<RemoteSubtitleInfo>());
         }
 
-        List<string> langStrings = ["eng", "en", "english"];
+        List<string> langStrings = [
+            request.Language, // Three letter language code
+            request.TwoLetterISOLanguageName, // Two letter language code
+        ];
 
         try
         {
@@ -149,19 +163,19 @@ public class LocalSubsProvider : ISubtitleProvider
             langStrings.Add(culture.EnglishName.ToLowerInvariant());
             langStrings.Add(request.Language.ToLowerInvariant());
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Culture not found for {TwoLetterISOLanguageName}", request.TwoLetterISOLanguageName ?? "<null>");
         }
 
         langStrings = langStrings.Distinct().ToList();
 
         string dir = Path.GetDirectoryName(request.MediaPath) ?? string.Empty;
-        string fn = Path.GetFileNameWithoutExtension(request.MediaPath);
 
         Dictionary<string, string> placeholders = new Dictionary<string, string>
         {
             { "%f%", Regex.Escape(Path.GetFileName(request.MediaPath)) },
-            { "%fn%", Regex.Escape(fn) },
+            { "%fn%", Regex.Escape(Path.GetFileNameWithoutExtension(request.MediaPath)) },
             { "%fe%", Regex.Escape(Path.GetExtension(request.MediaPath)) },
             { "%n%", "[0-9]+" },
             { "%l%", ".*(" + string.Join("|", langStrings) + ").*" },
@@ -178,10 +192,13 @@ public class LocalSubsProvider : ISubtitleProvider
 
             foreach (string match in MatchFile(dir, template, placeholders))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 string ext = (Path.GetExtension(match) ?? "srt").ToLowerInvariant().Replace(".", string.Empty, StringComparison.OrdinalIgnoreCase);
                 string pathHex = Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(match));
                 string id = string.Join(LocalSubsConstants.IDSEPARATOR, ext, request.Language, pathHex);
 
+                _logger.LogInformation("RemoteSubtitleInfo => MediaPath: {MediaPath} | Language: {Language} | Format: {Extension} | Id: {Id}", request.MediaPath, request.Language, ext, id);
                 matches.Add(new RemoteSubtitleInfo
                 {
                     Id = id,

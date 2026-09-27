@@ -20,7 +20,6 @@ public class LocalSubsPlugin : BasePlugin<LocalSubsConfiguration>, IHasWebPages
     public LocalSubsPlugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
         : base(applicationPaths, xmlSerializer)
     {
-        Instance = this;
     }
 
     /// <inheritdoc />
@@ -31,9 +30,6 @@ public class LocalSubsPlugin : BasePlugin<LocalSubsConfiguration>, IHasWebPages
 
     /// <inheritdoc />
     public override Guid Id => Guid.Parse(LocalSubsConstants.PLUGINGUID);
-
-    /// <summary>Gets current plugin instance.</summary>
-    public static LocalSubsPlugin? Instance { get; private set; }
 
     /// <summary>Gets plugin configuration.</summary>
     public LocalSubsConfiguration LocalSubsConfiguration => Configuration;

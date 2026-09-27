@@ -10,33 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Jellyfin.Plugin.LocalSubs;
 
 /// <summary>
-/// Single template string model.
-/// </summary>
-[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:FileNameMustMatchTypeName", Justification = "Only used locally.")]
-[SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:FileMayOnlyContainASingleType", Justification = "Only used locally.")]
-public class TemplateModel
-{
-    /// <summary>
-    /// Gets or sets a template string.
-    /// </summary>
-    [Required]
-    public string Template { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Multiple template strings model.
-/// </summary>
-[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:FileNameMustMatchTypeName", Justification = "Only used locally.")]
-[SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:FileMayOnlyContainASingleType", Justification = "Only used locally.")]
-public class TemplatesModel
-{
-    /// <summary>
-    /// Gets or sets a template string.
-    /// </summary>
-    public IEnumerable<string> Templates { get; set; } = new List<string>();
-}
-
-/// <summary>
 /// Controller for configuration page.
 /// </summary>
 [ApiController]
@@ -44,6 +17,17 @@ public class TemplatesModel
 [Authorize(Policy = Policies.SubtitleManagement)]
 public class LocalSubsController : ControllerBase
 {
+    private readonly LocalSubsPlugin _pluginInstance;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LocalSubsController"/> class.
+    /// </summary>
+    /// <param name="pluginInstance">Instance of the <see cref="LocalSubsPlugin"/> class.</param>
+    public LocalSubsController(LocalSubsPlugin pluginInstance)
+    {
+        _pluginInstance = pluginInstance;
+    }
+
     /// <summary>
     /// Add template string.
     /// </summary>
@@ -66,8 +50,8 @@ public class LocalSubsController : ControllerBase
         }
         else
         {
-            LocalSubsPlugin.Instance!.Configuration.AddTemplate(body.Template);
-            LocalSubsPlugin.Instance!.UpdateConfiguration(LocalSubsPlugin.Instance!.Configuration);
+            _pluginInstance.Configuration.AddTemplate(body.Template);
+            _pluginInstance.UpdateConfiguration(_pluginInstance.Configuration);
             return Ok();
         }
     }
@@ -98,11 +82,11 @@ public class LocalSubsController : ControllerBase
             {
                 if (!string.IsNullOrEmpty(template))
                 {
-                    LocalSubsPlugin.Instance!.Configuration.RemoveTemplate(template);
+                    _pluginInstance.Configuration.RemoveTemplate(template);
                 }
             }
 
-            LocalSubsPlugin.Instance!.UpdateConfiguration(LocalSubsPlugin.Instance!.Configuration);
+            _pluginInstance.UpdateConfiguration(_pluginInstance.Configuration);
             return Ok();
         }
     }
@@ -123,7 +107,7 @@ public class LocalSubsController : ControllerBase
     {
         return Ok(new TemplatesModel
         {
-            Templates = new List<string>(LocalSubsPlugin.Instance!.Configuration.Templates)
+            Templates = new List<string>(_pluginInstance.Configuration.Templates)
         });
     }
 
@@ -141,8 +125,8 @@ public class LocalSubsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public ActionResult ResetTemplates()
     {
-        LocalSubsPlugin.Instance!.Configuration.ResetTemplates();
-        LocalSubsPlugin.Instance!.UpdateConfiguration(LocalSubsPlugin.Instance!.Configuration);
+        _pluginInstance.Configuration.ResetTemplates();
+        _pluginInstance.UpdateConfiguration(_pluginInstance.Configuration);
         return Ok();
     }
 }
