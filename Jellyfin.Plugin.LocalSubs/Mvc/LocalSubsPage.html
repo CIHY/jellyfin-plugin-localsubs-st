@@ -1,15 +1,16 @@
 <div id="LocalSubsPage" data-role="page" class="page type-interior pluginConfigurationPage"
-    data-controller="__plugin/LocalSubsScript.js">
+     data-controller="__plugin/LocalSubsScript.js">
     <div data-role="content">
         <div class="content-primary">
-            <h3 class="sectionTitle sectionTitle-cards">
+            <h2 class="sectionTitle sectionTitle-cards">
                 <strong>Local Subs : Subtitle provider for local subtitle files</strong>
-            </h3>
-            <form id="LocalSubsForm">
+            </h2>
+            <form id="LocalSubs_TemplatesForm">
+                <h3>Templates</h3>
                 <div class="inputContainer">
-                    <input id="LocalSubsFormNewTemplate" is="emby-input" type="text" label="New template"
-                        placeholder="e.g. Subs\%n%_%l%.srt" />
-                    <button is="emby-button" id="LocalSubsFormAdd" class="raised button-submit block">
+                    <input name="LocalSubs_TemplatesForm_AddInput" is="emby-input"
+                           type="text" label="New template" placeholder="e.g. Subs\%n%_%l%.srt" />
+                    <button name="LocalSubs_TemplatesForm_AddButton" type="button" is="emby-button" class="raised button-submit block">
                         <span>${Add}</span>
                     </button>
                     <div class="fieldDescription">
@@ -28,18 +29,21 @@
                     </div>
                 </div>
                 <div class="inputContainer">
-                    <h3 class="checkboxListLabel">Current templates</h3>
-                    <div id="LocalSubsFormTemplates" class="checkboxList checkboxList-verticalwrap"></div>
+                    <h4 class="checkboxListLabel">Current templates</h4>
+                    <div id="LocalSubs_TemplatesForm_Templates" class="checkboxList checkboxList-verticalwrap"></div>
                 </div>
                 <div>
-                    <button is="emby-button" id="LocalSubsFormDelete" class="raised button-submit block">
-                        <span>${Delete}</span>
-                    </button>
-                    <button is="emby-button" id="LocalSubsFormReset" class="raised button-submit block">
-                        <span>${Default}</span>
-                    </button>
+                    <button name="LocalSubs_TemplatesForm_DeleteButton" type="button" is="emby-button" class="button-delete block">${Delete}</button>
+                    <button name="LocalSubs_TemplatesForm_ResetButton" type="button" is="emby-button" class="raised block">${Reset}</button>
                 </div>
             </form>
+            <div id="LocalSubs_LibrariesSettingsForm" style="margin-top:3rem">
+                <h3>Libraries Settings</h3>
+                <div id="LocalSubs_LibrariesSettingsForm_LibrariesSettings"></div>
+                <div style="display:none">
+                    <button id="LocalSubs_LibrariesSettingsForm_SaveButtonTemplate" type="button" is="emby-button" class="raised button-submit block">${Save}</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

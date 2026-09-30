@@ -33,7 +33,7 @@
     <None Remove="LocalSubsScript.js" />
     <None Remove="LocalSubsPage.html" />
     <None Remove="LocalSubsScript.js" />
-    <EmbeddedResource Include="LocalSubsPage.html" />
-    <EmbeddedResource Include="LocalSubsScript.js" />
+    <EmbeddedResource Include="Mvc\LocalSubsPage.html" />
+    <EmbeddedResource Include="Mvc\LocalSubsScript.js" />
   </ItemGroup>
 </Project>

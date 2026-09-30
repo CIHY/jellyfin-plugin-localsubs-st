@@ -1,14 +1,17 @@
+#pragma warning disable CA1819
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using MediaBrowser.Model.Plugins;
 
-namespace Jellyfin.Plugin.LocalSubs;
+namespace Jellyfin.Plugin.LocalSubs.Configuration;
 
 /// <summary>Plugin configuration.</summary>
+/// <remarks>template/main part.</remarks>
 [Serializable]
-public class LocalSubsConfiguration : BasePluginConfiguration
+public partial class LocalSubsConfiguration : BasePluginConfiguration
 {
     private List<string> _templates;
 
@@ -18,10 +21,10 @@ public class LocalSubsConfiguration : BasePluginConfiguration
     public LocalSubsConfiguration()
     {
         _templates = [];
+        _librariesSettings = [];
     }
 
     /// <summary>Gets or sets template strings.</summary>
-    [SuppressMessage("StyleCop.CSharp.SpacingRules", "CA1819", Justification = "Backed by a list object.")]
     public string[] Templates
     {
         get
@@ -31,17 +34,13 @@ public class LocalSubsConfiguration : BasePluginConfiguration
 
         set
         {
-            if (value != null)
+            _templates.Clear();
+            if (value is null || value.Length == 0)
             {
-                _templates.Clear();
-                foreach (string template in value)
-                {
-                    if (!string.IsNullOrEmpty(template))
-                    {
-                        _templates.Add(template);
-                    }
-                }
+                return;
             }
+
+            _templates.AddRange(value.Where(w => !string.IsNullOrEmpty(w)));
         }
     }
 
@@ -60,12 +59,6 @@ public class LocalSubsConfiguration : BasePluginConfiguration
     public void RemoveTemplate(string template)
     {
         _templates.Remove(template);
-    }
-
-    /// <summary>Remove all templates strings.</summary>
-    public void ClearTemplates()
-    {
-        _templates.Clear();
     }
 
     /// <summary>Reset templates to default.</summary>

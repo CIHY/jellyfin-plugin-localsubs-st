@@ -10,9 +10,12 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Providers;
+using MediaBrowser.Model.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.LocalSubs;
@@ -23,18 +26,17 @@ namespace Jellyfin.Plugin.LocalSubs;
 public class LocalSubsProvider : ISubtitleProvider
 {
     private readonly ILogger<LocalSubsProvider> _logger;
-    private readonly LocalSubsPlugin _pluginInstance;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalSubsProvider"/> class.
     /// </summary>
     /// <param name="logger">Instance of the <see cref="ILogger{LocalSubsProvider}"/> interface.</param>
-    /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/> for creating Http Clients.</param>
-    /// <param name="pluginInstance">Instance of the <see cref="LocalSubsPlugin"/> class.</param>
-    public LocalSubsProvider(ILogger<LocalSubsProvider> logger, IHttpClientFactory httpClientFactory, LocalSubsPlugin pluginInstance)
+    /// <param name="serviceProvider">Instance of the <see cref="IServiceProvider"/> class.</param>
+    public LocalSubsProvider(ILogger<LocalSubsProvider> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
-        _pluginInstance = pluginInstance;
+        _serviceProvider = serviceProvider;
     }
 
     /// <inheritdoc/>
@@ -146,8 +148,11 @@ public class LocalSubsProvider : ISubtitleProvider
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogDebug("Search MediaPath: {MediaPath} | Language: {Language} | TwoLetterISOLanguageName: {TwoLetterISOLanguageName}", request.MediaPath, request.Language, request.TwoLetterISOLanguageName);
 
-        var templates = _pluginInstance.Configuration.Templates;
-        if (string.IsNullOrEmpty(request.MediaPath) || templates == null || !templates.Any())
+        var templates = (_serviceProvider is ScopedServiceProvider
+            ? _serviceProvider.GetService<LocalSubsPlugin>()
+            : new LocalSubsPlugin(_serviceProvider.GetRequiredService<IApplicationPaths>(), _serviceProvider.GetRequiredService<IXmlSerializer>()))
+                ?.Configuration.Templates;
+        if (string.IsNullOrEmpty(request.MediaPath) || templates == null || templates.Length == 0)
         {
             return Task.FromResult(Enumerable.Empty<RemoteSubtitleInfo>());
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Jellyfin.Plugin.LocalSubs.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
@@ -42,12 +43,12 @@ public class LocalSubsPlugin : BasePlugin<LocalSubsConfiguration>, IHasWebPages
             new PluginPageInfo
             {
                 Name = "LocalSubsPage",
-                EmbeddedResourcePath = GetType().Namespace + ".LocalSubsPage.html",
+                EmbeddedResourcePath = GetType().Namespace + ".Mvc.LocalSubsPage.html",
             },
             new PluginPageInfo
             {
                 Name = "LocalSubsScript.js",
-                EmbeddedResourcePath = GetType().Namespace + ".LocalSubsScript.js",
+                EmbeddedResourcePath = GetType().Namespace + ".Mvc.LocalSubsScript.js",
             },
         ];
     }

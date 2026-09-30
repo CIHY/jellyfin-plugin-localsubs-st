@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace Jellyfin.Plugin.LocalSubs;
+namespace Jellyfin.Plugin.LocalSubs.Mvc;
 
 /// <summary>
 /// Single template string model.

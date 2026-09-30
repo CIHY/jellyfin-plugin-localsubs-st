@@ -1,31 +1,33 @@
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using MediaBrowser.Common.Api;
+using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Jellyfin.Plugin.LocalSubs;
+namespace Jellyfin.Plugin.LocalSubs.Mvc;
 
 /// <summary>
 /// Controller for configuration page.
 /// </summary>
+/// <remarks>template/main part.</remarks>
 [ApiController]
 [Produces(MediaTypeNames.Application.Json)]
 [Authorize(Policy = Policies.SubtitleManagement)]
-public class LocalSubsController : ControllerBase
+public partial class LocalSubsController : ControllerBase
 {
     private readonly LocalSubsPlugin _pluginInstance;
+    private readonly ILibraryManager _libraryManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalSubsController"/> class.
     /// </summary>
     /// <param name="pluginInstance">Instance of the <see cref="LocalSubsPlugin"/> class.</param>
-    public LocalSubsController(LocalSubsPlugin pluginInstance)
+    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> class.</param>
+    public LocalSubsController(LocalSubsPlugin pluginInstance, ILibraryManager libraryManager)
     {
         _pluginInstance = pluginInstance;
+        _libraryManager = libraryManager;
     }
 
     /// <summary>
@@ -44,16 +46,15 @@ public class LocalSubsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public IActionResult AddTemplate([FromBody] TemplateModel body)
     {
-        if (string.IsNullOrEmpty(body.Template))
+        string template = body.Template.Trim();
+        if (string.IsNullOrEmpty(template))
         {
             return BadRequest();
         }
-        else
-        {
-            _pluginInstance.Configuration.AddTemplate(body.Template);
-            _pluginInstance.UpdateConfiguration(_pluginInstance.Configuration);
-            return Ok();
-        }
+
+        _pluginInstance.Configuration.AddTemplate(template);
+        _pluginInstance.UpdateConfiguration(_pluginInstance.Configuration);
+        return Ok();
     }
 
     /// <summary>
@@ -70,25 +71,23 @@ public class LocalSubsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public IActionResult DeleteTemplates([FromBody] TemplatesModel body)
+    public IActionResult DeleteTemplates([FromBody] string[] body)
     {
-        if (body.Templates == null)
+        if (body.Length == 0)
         {
             return BadRequest();
         }
-        else
-        {
-            foreach (string template in body.Templates)
-            {
-                if (!string.IsNullOrEmpty(template))
-                {
-                    _pluginInstance.Configuration.RemoveTemplate(template);
-                }
-            }
 
-            _pluginInstance.UpdateConfiguration(_pluginInstance.Configuration);
-            return Ok();
+        foreach (string template in body)
+        {
+            if (!string.IsNullOrEmpty(template))
+            {
+                _pluginInstance.Configuration.RemoveTemplate(template);
+            }
         }
+
+        _pluginInstance.UpdateConfiguration(_pluginInstance.Configuration);
+        return Ok();
     }
 
     /// <summary>
@@ -105,10 +104,7 @@ public class LocalSubsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public ActionResult GetTemplates()
     {
-        return Ok(new TemplatesModel
-        {
-            Templates = new List<string>(_pluginInstance.Configuration.Templates)
-        });
+        return Ok(_pluginInstance.Configuration.Templates);
     }
 
     /// <summary>

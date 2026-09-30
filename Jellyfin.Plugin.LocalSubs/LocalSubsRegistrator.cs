@@ -13,6 +13,7 @@ public class LocalSubsRegistrator : IPluginServiceRegistrator
     /// <inheritdoc />
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        serviceCollection.AddSingleton<ISubtitleProvider, LocalSubsProvider>();
+        // serviceCollection.AddSingleton<ISubtitleProvider, LocalSubsProvider>();
+        serviceCollection.AddScoped<LocalSubsPlugin>();
     }
 }
