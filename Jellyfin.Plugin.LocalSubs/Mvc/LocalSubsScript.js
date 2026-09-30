@@ -1,5 +1,3 @@
-// const LocalSubsGuid = "7de4aa03-f418-4e1c-a8ba-08ccecba4ab5";
-
 function controller(view, params) {
     const apis = {
         template: {
